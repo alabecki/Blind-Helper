@@ -19,6 +19,9 @@ threadLock = threading.Lock()
 slider_min = 0
 slider_max = 200
 cap = None
+numberOfQuantizionLevels = 0
+
+sample_rate = 8000
 
 
 class FrameGrabber(threading.Thread):
@@ -76,7 +79,7 @@ def framegrabber(cap):
 
 
 def initialize():
-	global width, height
+	global width, height, cap_rate, numberOfQuantizionLevels
 	width = 64
 	height = 64
 	sampleRate = 8000
@@ -100,6 +103,8 @@ def initialize():
 
 
 def open_video(btn):
+
+	
 	global file
 	
 	frame = np.zeros(shape = (width, height))
@@ -119,6 +124,9 @@ def open_video(btn):
 def play_video(btn):
 	#global file, cap
 	#print(type(file))
+	sample_rate = 44100
+	wave = sine_wave(440, 3000, sample_rate)
+	play_sound(wave, 10000)
 	cap = cv2.VideoCapture(file.name)	
 	frame = np.zeros(shape = (width, height))
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
@@ -129,16 +137,17 @@ def play_video(btn):
 		ret, frame = cap.read()
 		if(ret):
 			print("Any ret?")
-			img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-			img = Image.fromarray(img)
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			img = Image.fromarray(gray)
 			img = ImageTk.PhotoImage(img)
 			app.reloadImageData("Video", img, fmt="mpg")
 
 			#im = Utilities.mat2Image(frame);
 			#Utilities.onFXThread(imageView.imageProperty(), im);
+			global cap_rate
 			currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
-			if currentFrameNumber % (framePerSecond * cap_rate) == 0:
-				play_sounds(img)
+			if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
+				play_sounds(gray)
 
 			totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 			pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
@@ -160,15 +169,17 @@ def play_video(btn):
 	#cv2.destroyAllWindows()
 
 
-def play_sounds(cap):
-	if cap.read():
-		frame = np.zeros(shape = (width, height))
-		img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
-		roundedImg =  np.array(resized.rows(), resized.cols())
-		for i in range(resized.rows):
-			for j in range(resized.cols):
-				roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
+def play_sounds(img):
+	resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
+	print("resized is a %s" % (type(resized)))
+	print("resized shape: %s  %s" % (resized.shape[0], resized.shape[1]))
+	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
+	for i in range(resized.shape[0]):
+		#print(i)
+		for j in range(resized.shape[1]):
+		#	print(j)
+
+			roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
 
 
 
@@ -203,13 +214,36 @@ def pause_video(btn):
 
 
 
+def sine_wave(hz, peak, n_samples=sample_rate):
+    length = sample_rate / float(hz)
+    omega = np.pi * 2 / length
+    xvalues = np.arange(int(length)) * omega
+    onecycle = peak * np.sin(xvalues)
+    return np.resize(onecycle, (n_samples,)).astype(np.int16)
+
+
+def play_sound(wave, ms):
+    """Play the given NumPy array, as a sound, for ms milliseconds."""
+    sound = pygame.sndarray.make_sound(wave)
+    sound.play(-1)
+    pygame.time.delay(ms)
+    sound.stop()
+
+
+
 
 w = 600
 h = 360
 frame = "test.gif"
 app = gui("Blind Helper")
+
+pygame.mixer.init(channels = 1)
 app.setPadding([5,5]) # 20 pixels padding outside the widget [X, Y]
 app.setInPadding([5,5]) # 20 pixels padding inside the widget [X, Y]
+
+sample_rate = 44100
+wave = sine_wave(440, 3000, sample_rate)
+play_sound(wave, 10000)
 
 app.createMenu("Menu")
 app.addMenuItem("Menu", "Open Video", func = open_video, shortcut=None, underline=-1)
