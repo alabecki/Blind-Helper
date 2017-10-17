@@ -9,7 +9,8 @@ import threading
 from threading import Thread
 import time
 import math as mth
-import pygame, pygame.sndarray 
+import pygame, pygame.sndarray
+#import scipy.signal
 
 file = None
 width = 64
@@ -125,8 +126,8 @@ def play_video(btn):
 	#global file, cap
 	#print(type(file))
 	sample_rate = 44100
-	wave = sine_wave(440, 3000, sample_rate)
-	play_sound(wave, 10000)
+	wave = sine_wave(600, 100000, sample_rate)
+	play_sound(wave, 5000)
 	cap = cv2.VideoCapture(file.name)	
 	frame = np.zeros(shape = (width, height))
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
