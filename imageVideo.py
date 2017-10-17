@@ -76,7 +76,7 @@ def framegrabber(cap):
 
 
 def initialize():
-	global width, height
+	global width, height, cap_rate, numberOfQuantizionLevels
 	width = 64
 	height = 64
 	sampleRate = 8000
@@ -129,8 +129,8 @@ def play_video(btn):
 		ret, frame = cap.read()
 		if(ret):
 			print("Any ret?")
-			img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-			img = Image.fromarray(img)
+			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+			img = Image.fromarray(gray)
 			img = ImageTk.PhotoImage(img)
 			app.reloadImageData("Video", img, fmt="mpg")
 
@@ -138,7 +138,7 @@ def play_video(btn):
 			#Utilities.onFXThread(imageView.imageProperty(), im);
 			currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
 			if currentFrameNumber % (framePerSecond * cap_rate) == 0:
-				play_sounds(img)
+				play_sounds(gray)
 
 			totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 			pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
@@ -160,15 +160,16 @@ def play_video(btn):
 	#cv2.destroyAllWindows()
 
 
-def play_sounds(cap):
-	if cap.read():
-		frame = np.zeros(shape = (width, height))
-		img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
-		roundedImg =  np.array(resized.rows(), resized.cols())
-		for i in range(resized.rows):
-			for j in range(resized.cols):
-				roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
+def play_sounds(img):
+	resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
+	print (resized.shape)
+	print (resized.shape[0])
+	
+	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
+	print (roundedImg.shape)
+	for i in range(resized.shape[0]):
+		for j in range(resized.shape[1]):
+			roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
 
 
 
