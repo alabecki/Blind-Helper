@@ -147,6 +147,7 @@ def play_video(btn):
 			global cap_rate
 			currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
 			if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
+
 				play_sounds(gray)
 
 			totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -171,14 +172,14 @@ def play_video(btn):
 
 def play_sounds(img):
 	resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
-	print("resized is a %s" % (type(resized)))
-	print("resized shape: %s  %s" % (resized.shape[0], resized.shape[1]))
-	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
-	for i in range(resized.shape[0]):
-		#print(i)
-		for j in range(resized.shape[1]):
-		#	print(j)
 
+	print (resized.shape)
+	print (resized.shape[0])
+	
+	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
+	print (roundedImg.shape)
+	for i in range(resized.shape[0]):
+		for j in range(resized.shape[1]):
 			roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
 
 
