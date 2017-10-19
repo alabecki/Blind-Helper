@@ -10,6 +10,7 @@ from threading import Thread
 import time
 import math as mth
 import pygame, pygame.sndarray 
+#import scipy.signal
 
 file = None
 width = 64
@@ -46,10 +47,10 @@ def framegrabber(cap):
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
 
 	if(cap.read()):  # decode successfully
-		print("Any read?")
+		#print("Any read?")
 		ret, frame = cap.read()
 		if(ret):
-			print("Any ret?")
+		#	print("Any ret?")
 			img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			img = Image.fromarray(img)
 			img = ImageTk.PhotoImage(img)
@@ -125,11 +126,14 @@ def play_video(btn):
 	#global file, cap
 	#print(type(file))
 	sample_rate = 44100
-	wave = sine_wave(440, 3000, sample_rate)
-	play_sound(wave, 10000)
+	wave = sine_wave(880, 10000, sample_rate)
+	play_sound(wave, 5000)
 	cap = cv2.VideoCapture(file.name)	
 	frame = np.zeros(shape = (width, height))
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
+	#counter = 30
+	sounded_frame =  np.zeros(shape = (width, height))
+	play_position = 1
 
 	#if(cap.read()):  # decode successfully
 	while(True):
@@ -146,9 +150,16 @@ def play_video(btn):
 			#Utilities.onFXThread(imageView.imageProperty(), im);
 			global cap_rate
 			currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
-			if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
+			if counter == 30:
+				played_sound = gray
+				played_sound = prepare_frame(gray)
+			play_col(played_sound, play_position)
+			if play_position < 30:
+				play_position += 1
+			else:
+				play_position = 1
 
-				play_sounds(gray)
+			#if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
 
 			totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 			pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
@@ -170,18 +181,16 @@ def play_video(btn):
 	#cv2.destroyAllWindows()
 
 
-def play_sounds(img):
-	resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)
-
-	print (resized.shape)
-	print (resized.shape[0])
-	
+def prepare_frame(img):
+	resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)	
 	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
-	print (roundedImg.shape)
 	for i in range(resized.shape[0]):
 		for j in range(resized.shape[1]):
 			roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
+	return roundedImg
 
+def play_col(img, position):
+	current_col = img[:, position*2]
 
 
 
@@ -230,6 +239,13 @@ def play_sound(wave, ms):
     pygame.time.delay(ms)
     sound.stop()
 
+def make_chord(hz, ratios):
+    """Make a chord based on a list of frequency ratios."""
+    sampling = 4096
+    chord = waveform(hz, sampling)
+    for r in ratios[1:]:
+        chord = sum([chord, sine_wave(hz * r / ratios[0], sampling)])
+    return chord
 
 
 
@@ -243,7 +259,7 @@ app.setPadding([5,5]) # 20 pixels padding outside the widget [X, Y]
 app.setInPadding([5,5]) # 20 pixels padding inside the widget [X, Y]
 
 sample_rate = 44100
-wave = sine_wave(440, 3000, sample_rate)
+wave = sine_wave(880, 10000, sample_rate)
 play_sound(wave, 10000)
 
 app.createMenu("Menu")
