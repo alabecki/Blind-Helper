@@ -10,6 +10,7 @@ from threading import Thread
 import time
 import math as mth
 import pygame, pygame.sndarray 
+
 #import scipy.signal
 
 file = None
@@ -127,6 +128,7 @@ def play_video(btn):
 	#print(type(file))
 	sample_rate = 44100
 	wave = sine_wave(880, 10000, sample_rate)
+
 	play_sound(wave, 5000)
 	cap = cv2.VideoCapture(file.name)	
 	frame = np.zeros(shape = (width, height))
