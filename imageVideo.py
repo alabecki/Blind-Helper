@@ -19,11 +19,20 @@ height = 64
 
 threadLock = threading.Lock()
 slider_min = 0
-slider_max = 200
+slider_max = 100
 cap = None
 numberOfQuantizionLevels = 0
-
+freq = {}
+numberOfSamplesPerColumn = 10
 sample_rate = 8000
+
+'''def create_pitch_match(height):
+	pitches = []
+	middle = 440
+	lowerst = 0
+
+	step = math.sin(2 * path.pi * freq[m] * (double)time/sampleRate);'''
+
 
 
 class FrameGrabber(threading.Thread):
@@ -81,7 +90,7 @@ def framegrabber(cap):
 
 
 def initialize():
-	global width, height, cap_rate, numberOfQuantizionLevels
+	global width, height, cap_rate, numberOfQuantizionLevels, freq
 	width = 64
 	height = 64
 	sampleRate = 8000
@@ -101,7 +110,7 @@ def initialize():
 		freq[m] = freq[m+1] * 2**(-1.0/12.0) 
 		m -= 1
 	slider_min = 0
-	slider_max = 200
+	slider_max = 100
 
 
 def open_video(btn):
@@ -124,13 +133,16 @@ def open_video(btn):
 		
 
 def play_video(btn):
-	#global file, cap
-	#print(type(file))
-	sample_rate = 44100
-	wave = sine_wave(880, 10000, sample_rate)
+	
+	global file
 
-	play_sound(wave, 5000)
-	cap = cv2.VideoCapture(file.name)	
+	cap = cv2.VideoCapture(file.name)
+	totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+	position = app.getScale("Slider")
+	print("position of slider on play %s" % (position))
+	current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
+	print("Current frame %s" % (current_frame))
+	cap.set(1, current_frame)
 	frame = np.zeros(shape = (width, height))
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
 	#counter = 30
@@ -139,20 +151,21 @@ def play_video(btn):
 
 	#if(cap.read()):  # decode successfully
 	while(True):
-		#print("Any read?")
+	
 		ret, frame = cap.read()
+		currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+		#if currentFrameNumber % 2 == 0:
+		#	continue
 		if(ret):
-			print("Any ret?")
+			#print("Any ret?")
 			gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 			img = Image.fromarray(gray)
 			img = ImageTk.PhotoImage(img)
 			app.reloadImageData("Video", img, fmt="mpg")
 
-			#im = Utilities.mat2Image(frame);
-			#Utilities.onFXThread(imageView.imageProperty(), im);
 			global cap_rate
-			currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
-			if counter == 30:
+			#currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+			if play_position == 1:
 				played_sound = gray
 				played_sound = prepare_frame(gray)
 			play_col(played_sound, play_position)
@@ -161,15 +174,14 @@ def play_video(btn):
 			else:
 				play_position = 1
 
-			#if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
 
-			totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-			pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
+			pos = ((currentFrameNumber / totalFrameCount) * (slider_max - slider_min))
 			app.setScale("Slider", pos, callFunction=False)
 		else:   #reach the end of the video
 			#cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
 			app.setScale("Slider", 0, callFunction=False)
 			print("No more ret")
+			#cap.release()
 			break
 
 
@@ -188,30 +200,49 @@ def prepare_frame(img):
 	roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
 	for i in range(resized.shape[0]):
 		for j in range(resized.shape[1]):
-			roundedImg[i,j] = (mth.floor(resized[i,j])/numberOfQuantizionLevels)/numberOfQuantizionLevels
+			roundedImg[i,j] = mth.floor(resized[i,j]/numberOfQuantizionLevels)/numberOfQuantizionLevels
 	return roundedImg
 
 def play_col(img, position):
+	print("In play_col")
+	global sample_rate, freq
 	current_col = img[:, position*2]
+	#print(current_col)
+	chord = sine_wave(1, current_col[0], sample_rate)
+	
+	for c in range(height):
+		chord = sum([chord, sine_wave(c, current_col[c]*127, sample_rate)])
+	print(chord)
+	print("Play sound")
+	play_sound(chord, 33)
 
-
-
-
-
+ 
 
 def show_options(btn):
 	return
 
-def slide_video(btn):
-	position = app.getScale("Slider")
+def slide_video(value):
+	global file, width, height
+	print("file name: %s" % (file.name))
 	cap = cv2.VideoCapture(file.name)
-	cap.set(cv2.CAP_PROP_POS_FRAMES, position)
+	position = app.getScale("Slider")
+	print(position)
+	totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+	print("Total frame count: %s" % totalFrameCount)
+	current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
+	cap.set(1, current_frame)
+	currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+	print("current: %s" % currentFrameNumber)
+	frame = np.zeros(shape = (width, height))
 	ret, frame = cap.read()
-	img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	img = Image.fromarray(img)
-	img = ImageTk.PhotoImage(img)
-	app.reloadImageData("Video", img, fmt="mpg")
-
+	print(ret)
+	print(frame)
+	if(ret):
+		print("slide ret?")
+		img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		img = Image.fromarray(img)
+		img = ImageTk.PhotoImage(img)
+		app.reloadImageData("Video", img, fmt="mpg")
 	cap.release()
 	return
 
@@ -226,12 +257,18 @@ def pause_video(btn):
 
 
 
-def sine_wave(hz, peak, n_samples=sample_rate):
-    length = sample_rate / float(hz)
-    omega = np.pi * 2 / length
-    xvalues = np.arange(int(length)) * omega
-    onecycle = peak * np.sin(xvalues)
-    return np.resize(onecycle, (n_samples,)).astype(np.int16)
+
+def sine_wave(row, peak, n_samples=sample_rate):
+	global height, freq, numberOfSamplesPerColumn
+	pos = height - row -1
+	hz = freq[pos]
+	#print("hz: %s" % (hz))
+	length = sample_rate / float(hz)
+	omega = np.pi * 2 / length
+	#omega = np.sin(2 * np.pi * freq[pos] * )
+	xvalues = np.arange(int(length)) * omega
+	onecycle = 4 * peak * np.sin(xvalues)
+	return np.resize(onecycle, (n_samples,)).astype(np.int16)
 
 
 def play_sound(wave, ms):
@@ -241,13 +278,15 @@ def play_sound(wave, ms):
     pygame.time.delay(ms)
     sound.stop()
 
-def make_chord(hz, ratios):
-    """Make a chord based on a list of frequency ratios."""
+def make_chord(voices):
+    """Make a chord from an array."""
     sampling = 4096
-    chord = waveform(hz, sampling)
-    for r in ratios[1:]:
-        chord = sum([chord, sine_wave(hz * r / ratios[0], sampling)])
+    chord = waveform(voice[v], sampling)
+    for v in len(voices):
+        chord = sum(sine_wave(freq[v], voices[v]*64, sample_rate))
     return chord
+
+
 
 
 
@@ -260,9 +299,9 @@ pygame.mixer.init(channels = 1)
 app.setPadding([5,5]) # 20 pixels padding outside the widget [X, Y]
 app.setInPadding([5,5]) # 20 pixels padding inside the widget [X, Y]
 
-sample_rate = 44100
-wave = sine_wave(880, 10000, sample_rate)
-play_sound(wave, 10000)
+sample_rate = 8000
+#wave = sine_wave(880, 10000, sample_rate)
+#play_sound(wave, 10000)
 
 app.createMenu("Menu")
 app.addMenuItem("Menu", "Open Video", func = open_video, shortcut=None, underline=-1)
