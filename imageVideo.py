@@ -191,6 +191,74 @@ def play_video(btn):
         #cv2.destroyAllWindows()
 
 
+def play_video_midi(btn):
+        #global file, cap
+        #print(type(file))
+        #sample_rate = 44100
+        #wave = sine_wave(880, 10000, sample_rate)
+
+        #play_sound(wave, 5000)
+        cap = cv2.VideoCapture(file.name)       
+        frame = np.zeros(shape = (width, height))
+        framePerSecond = cap.get(cv2.CAP_PROP_FPS)
+        #counter = 30
+        sounded_frame =  np.zeros(shape = (width, height))
+        play_position = 1
+
+        #if(cap.read()):  # decode successfully
+        while(True):
+                #print("Any read?")
+                ret, frame = cap.read()
+                currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                if currentFrameNumber % 2 == 0:
+                        continue
+                if(ret):
+                        print("Any ret?")
+                        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                        img = Image.fromarray(gray)
+                        img = ImageTk.PhotoImage(img)
+                        app.reloadImageData("Video", img, fmt="mpg")
+
+                        #im = Utilities.mat2Image(frame);
+                        #Utilities.onFXThread(imageView.imageProperty(), im);
+                        #global cap_rate
+                        #currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+                        if play_position ==1:
+                                played_sound = gray
+                                played_sound = prepare_frame(gray)
+                        currentcol = play_col(played_sound, play_position) #returns current column
+                        midilist = make_midi(currentcol)
+                        midi_chord(midilist)
+                        
+                        if play_position < 30:
+                                play_position += 1
+                        else:
+                                play_position = 1
+
+                        #if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
+
+                        totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                        pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
+                        app.setScale("Slider", pos, callFunction=False)
+                else:   #reach the end of the video
+                        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                        app.setScale("Slider", 0, callFunction=False)
+                        print("No more ret")
+                        break
+
+
+
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                        break
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        app.setScale("Slider", 0, callFunction=False)
+        #cap.wszx()
+        cap.release()
+        #cv2.destroyAllWindows()
+
+
+
+
 def prepare_frame(img):
         resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)      
         roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
@@ -316,6 +384,11 @@ frame = "test.gif"
 app = gui("Blind Helper")
 
 pygame.mixer.init(channels = 1)
+
+app.bell()
+app.showSplash(text = 'Loading Application', fill = 'blue', stripe = 'black',font='44', fg='white')
+app.setBg('#6a79ff')
+app.setFg('#7B68EE')
 app.setPadding([5,5]) # 20 pixels padding outside the widget [X, Y]
 app.setInPadding([5,5]) # 20 pixels padding inside the widget [X, Y]
 
@@ -351,10 +424,11 @@ app.startLabelFrame("")
 #app.addScale("Slider")
 #app.setScaleIncrement("Slider", 1)
 app.stopLabelFrame()
-app.addButton("Open", open_video, 6, 2, 2)
+app.addButton("Open", open_video, 6, 2, 2,)
 app.addButton("Pause", pause_video, 6, 4, 2)
 app.addButton("Play", play_video, 6, 6, 2)
-app.addButton("Midi", play_video, 6, 8, 2)
+app.addButton("Midi", play_video_midi, 6, 8, 2)
+
 app.stopLabelFrame()
 video = "test.mp4"
 app.setStretch("both")
