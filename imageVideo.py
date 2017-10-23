@@ -130,18 +130,25 @@ def open_video(btn):
 	cap.release()
 
 	return
-		
+	
+	
 
-def play_video(btn):
+def start_play_thread(btn):
+	app.thread(play_video)
+
+def play_video():
 	
 	global file
+	position = app.getScale("Slider")
+	app.queueFunction(app.setScale("Slider", position, callFunction=True))
+	#app.setButtonChangeFunction(title, function)
 
 	cap = cv2.VideoCapture(file.name)
 	totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 	position = app.getScale("Slider")
-	print("position of slider on play %s" % (position))
+	#print("position of slider on play %s" % (position))
 	current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
-	print("Current frame %s" % (current_frame))
+	#print("Current frame %s" % (current_frame))
 	cap.set(1, current_frame)
 	frame = np.zeros(shape = (width, height))
 	framePerSecond = cap.get(cv2.CAP_PROP_FPS)
@@ -289,7 +296,6 @@ def make_chord(voices):
 
 
 
-
 w = 600
 h = 360
 frame = "test.gif"
@@ -333,7 +339,7 @@ app.startLabelFrame("")
 app.stopLabelFrame()
 app.addButton("Open", open_video, 6, 2, 2)
 app.addButton("Pause", pause_video, 6, 4, 2)
-app.addButton("Play", play_video, 6, 6, 2)
+app.addButton("Play", start_play_thread, 6, 6, 2)
 app.stopLabelFrame()
 video = "test.mp4"
 app.setStretch("both")
