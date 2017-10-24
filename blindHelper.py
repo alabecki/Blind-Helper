@@ -386,7 +386,7 @@ def make_midi(col):
         midis = []
         for i in range(height):
                 
-                midis.append([i+60,(mth.floor(((col[i])*127)+100))])
+                midis.append([i+60,(mth.floor(((col[i])*127*VOL)+100))])
 
 
         return midis
@@ -401,7 +401,7 @@ def midi_chord(*notes):
     #print (notes[0][1][1])
     #print (notes[0])
     
-
+    VOL = app.getScale("Volume")/10
     for i in range(8):
             #player.note_on(0, 22)
             if i == 49:
