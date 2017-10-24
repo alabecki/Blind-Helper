@@ -179,7 +179,7 @@ def play_video_midi():
         STOP = False
         PAUSE =False    
         SLIDE = False
-        VOL = VOL/10
+        VOL = VOL/20
         #global file, cap
         #print(type(file))
         #sample_rate = 44100
@@ -201,7 +201,7 @@ def play_video_midi():
         
         #if(cap.read()):  # decode successfully
         while(True):
-                VOL = app.getScale("Volume")/10
+                VOL = app.getScale("Volume")/20
 
                 print(SLIDE)
                 if STOP == True:
@@ -375,7 +375,9 @@ def make_midi(col):
         global VOL
         midis = []
         for i in range(height):
-                midis.append([i+60,(mth.floor((col[i]*127*VOL)+100))])
+
+        midis.append([i+60,(mth.floor(((col[i])*63*VOL)+100))])
+
         return midis
                              
     
@@ -387,7 +389,7 @@ def midi_chord(*notes):
     #print (notes[0][1][1])
     #print (notes[0])
     
-
+    VOL = app.getScale("Volume")/10
     for i in range(8):
             #player.note_on(0, 22)
             if i == 49:
