@@ -12,7 +12,7 @@ import time
 import math as mth
 import pygame, pygame.sndarray
 import pygame.midi
-
+import sys
 pygame.midi.init()
 
 #Global Variables (originally planned to replace with Class variables)
@@ -116,13 +116,12 @@ def play_video():
                         position = app.getScale("Slider")
                         current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
                         cap.set(1, current_frame + 1)
-               # currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
+               
                 ret, frame = cap.read()
-                #if currentFrameNumber % 2 == 0:
-                        
+                                       
                 #Checks if a frame as successfully been captured
                 if(ret):
-                		#Plays a bell sound that I cannot seem to hear
+                		#Plays a bell sound that (plays very fast so its difficult to hear - easier to hear click(bell in midi function)
                         app.bell()
                         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                         img = Image.fromarray(gray)
@@ -131,7 +130,6 @@ def play_video():
                         app.reloadImageData("Video", img, fmt="mpg")
 
                         global cap_rate
-                        #currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
                         #Checks if the program should being playing sound for the current frame
                         #Does so if position is 1
                         if play_position == 1:
@@ -155,11 +153,8 @@ def play_video():
                         if SLIDE == False:
                                 app.setScale("Slider", pos, callFunction= False)
                 
-                else:   #reach the end of the video
-                        #cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                else:
                         app.setScale("Slider", 0, callFunction= False)
-                        print("No more ret")
-                        #cap.release()
                         break
 
 
@@ -168,9 +163,8 @@ def play_video():
                         break
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         app.setScale("Slider", 0, callFunction=False)
-        #cap.wszx()
         cap.release()
-        #cv2.destroyAllWindows()
+
 
 #Creates a thread for the midi based playback        
 def start_play_thread_midi(btn):
@@ -190,20 +184,16 @@ def play_video_midi():
         cap = cv2.VideoCapture(file.name)
         totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         position = app.getScale("Slider")
-        print("position of slider on play %s" % (position))
         current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
-        print("Current frame %s" % (current_frame))
         cap.set(1, current_frame)
         frame = np.zeros(shape = (width, height))
         framePerSecond = cap.get(cv2.CAP_PROP_FPS)
-        #counter = 30
         sounded_frame =  np.zeros(shape = (width, height))
         play_position = 1
 
         while(True):
                 VOL = app.getScale("Volume")/20
 
-                print(SLIDE)
                 if STOP == True:
                         position = 0
                         app.setScale("Slider", position, callFunction= True)
@@ -244,14 +234,12 @@ def play_video_midi():
                         else:
                                 play_position = 1
 
-                        #if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
+                        
                         totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                         pos = (currentFrameNumber / totalFrameCount * (slider_max - slider_min))
                         app.setScale("Slider", pos, callFunction=False)
-                else:   #reach the end of the video
-                        #cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                else:   
                         app.setScale("Slider", 0, callFunction=False)
-                        print("No more ret")
                         break
 
 
@@ -260,9 +248,8 @@ def play_video_midi():
                         break
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         app.setScale("Slider", 0, callFunction=False)
-        #cap.wszx()
         cap.release()
-        #cv2.destroyAllWindows()
+
 
        
 
@@ -283,8 +270,7 @@ def play_col(img, position):
         
         for c in range(height):
                 chord = sum([chord, sine_wave(c, current_col[c]*127*VOL, sample_rate)])
-        print(chord)
-        print("Play sound")
+
         play_sound(chord, 33)
 
  #As above, only within the MIDI playback
@@ -305,8 +291,6 @@ def slide_video(value):
         currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
         frame = np.zeros(shape = (width, height))
         ret, frame = cap.read()
-        print(ret)
-        print(frame)
         if(ret):
                 img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 img = Image.fromarray(img)
@@ -317,16 +301,16 @@ def slide_video(value):
         return
 
 
-
+#Exit the Application
 def exit_program(btn):
-		sys.exit()
+        sys.exit()
         return
-
+#Pause the application --> Hit Play to resume
 def pause_video(btn):
         global PAUSE
         PAUSE = True
         return
-
+#Stop the application
 def stop_playing(btn):
         global STOP 
         STOP = True 
@@ -361,6 +345,8 @@ def make_chord(voices):
         chord = sum(sine_wave(freq[v], voices[v]*64, sample_rate))
     return chord
 
+#Make an array to hold all the midi chords we want played
+#chords are determined by pixel color and intensity
 def make_midi(col):
         midis = []
         for i in range(height):
@@ -369,21 +355,18 @@ def make_midi(col):
         return midis
                              
       
-
+#Play midi chords - function is passed an array of midi chords to play 
 def midi_chord(*notes):
     """Make a chord using the midi library"""
     player = pygame.midi.Output(0)
     player.set_instrument(0)
-    #print (notes[0][1][1])
-    #print (notes[0])
+
     
     VOL = app.getScale("Volume")/10
     for i in range(8):
-            #player.note_on(0, 22)
-            if i == 49:
+
+            if i == 49: #prevents indexing outside of the array
                     break
-            #print (notes[0][i][0])
-            #print( notes[0][i][1])
             player.note_on(notes[0][i][0], notes[0][i+1][1])
             player.note_on(notes[0][i+1][0], notes[0][i+1][1])
             player.note_on(notes[0][i+2][0], notes[0][i+2][1])
@@ -407,8 +390,6 @@ app.setPadding([5,5]) # 20 pixels padding outside the widget [X, Y]
 app.setInPadding([5,5]) # 20 pixels padding inside the widget [X, Y]
 
 sample_rate = 8000
-#wave = sine_wave(880, 10000, sample_rate)
-#play_sound(wave, 10000)
 
 app.bell()
 app.showSplash(text = 'Loading Application', fill = 'blue', stripe = 'black',font='44', fg='white')
@@ -418,7 +399,6 @@ app.setBg('#6a79ff')
 app.createMenu("Menu")
 app.addMenuItem("Menu", "Open Video", func = open_video, shortcut=None, underline=-1)
 app.addMenuItem("Menu", "Exit", func = exit_program, shortcut = None, underline = -1)
-#app.useTtk()#Set up GUI
 app.setStretch("both")
 app.addScale("Slider")
 app.setScaleIncrement("Slider", 1)
@@ -428,9 +408,7 @@ app.setScaleChangeFunction("Slider", slide_video)
 
 app.startLabelFrame("Player")
 app.setFont(20)
-#app.addLabel("Video", "Video",1, 1 , 4, 3)
 app.addImage("Video", frame)
-#app.setImageLocation()
 app.setImageSize("Video", w, h)
 app.setStretch("both")
 
