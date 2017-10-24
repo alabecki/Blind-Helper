@@ -184,7 +184,6 @@ def play_video_midi():
         #print(type(file))
         #sample_rate = 44100
         #wave = sine_wave(880, 10000, sample_rate)
-
         #play_sound(wave, 5000)
         cap = cv2.VideoCapture(file.name)
         totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -200,7 +199,6 @@ def play_video_midi():
         play_position = 1
 
         
-
         #if(cap.read()):  # decode successfully
         while(True):
                 VOL = app.getScale("Volume")/10
@@ -221,12 +219,6 @@ def play_video_midi():
                         current_frame = int((position * totalFrameCount)/(slider_max - slider_min))
                         cap.set(1, current_frame + 1)
 
-
-
-
-
-
-                
                 #print("Any read?")
                 ret, frame = cap.read()
                 currentFrameNumber = cap.get(cv2.CAP_PROP_POS_FRAMES)
@@ -255,7 +247,6 @@ def play_video_midi():
                                 play_position += 1
                         else:
                                 play_position = 1
-
                         #if (currentFrameNumber % int(framePerSecond * cap_rate) == 0) or currentFrameNumber == 1:
         
                         totalFrameCount = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -264,9 +255,7 @@ def play_video_midi():
                 else:   #reach the end of the video
                         #cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                         app.setScale("Slider", 0, callFunction=False)
-                        print("No more ret")
                         break
-
 
 
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -282,8 +271,6 @@ def play_video_midi():
 
 
 
-
-
 def prepare_frame(img):
         resized = cv2.resize(img,(width, height), interpolation = cv2.INTER_CUBIC)      
         roundedImg =  np.zeros(shape = (resized.shape[0], resized.shape[1]))
@@ -293,7 +280,6 @@ def prepare_frame(img):
         return roundedImg
 
 def play_col(img, position):
-        print("In play_col")
         global sample_rate, freq, VOL
         current_col = img[:, position*2]
         #print(current_col)
@@ -304,6 +290,9 @@ def play_col(img, position):
         print(chord)
         print("Play sound")
         play_sound(chord, 33)
+        if position == 30:
+            app.bell()
+
 
  
 def play_col_midi(img, position):
@@ -383,16 +372,13 @@ def make_chord(voices):
     return chord
 
 def make_midi(col):
+        global VOL
         midis = []
         for i in range(height):
-                
-                midis.append([i+60,(mth.floor(((col[i])*127)+100))])
-
-
+                midis.append([i+60,(mth.floor((col[i]*127*VOL)+100))])
         return midis
                              
-        
-
+    
 
 def midi_chord(*notes):
     """Make a chord using the midi library"""
